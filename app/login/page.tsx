@@ -1,108 +1,115 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/app/lib/supabaseClient";
 
-export default function NewProjectPage() {
-  const [email, setEmail] = useState('');
-  const [businessName, setBusinessName] = useState('');
-  const [industry, setIndustry] = useState('');
-  const [style, setStyle] = useState('');
-  const [plan, setPlan] = useState('Professional');
+export default function LoginPage() {
+  const router = useRouter();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async () => {
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
     setLoading(true);
+    setError(null);
 
-    const { error } = await supabase.from('projects').insert([
-      {
-        email,
-        business_name: businessName,
-        industry,
-        style,
-        plan,
-        status: 'QUEUED',
-        paid: false
-      }
-    ]);
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
     setLoading(false);
 
     if (error) {
-      alert(error.message);
-    } else {
-      alert('Project submitted successfully!');
-      setEmail('');
-      setBusinessName('');
-      setIndustry('');
-      setStyle('');
+      setError(error.message);
+      return;
     }
-  };
+
+    // ✅ login success
+    router.push("/admin/projects");
+  }
 
   return (
-    <div style={{ maxWidth: 500, margin: '60px auto', padding: 20 }}>
-      <h1>Start Your Website</h1>
-
-      <input
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        style={inputStyle}
-      />
-
-      <input
-        placeholder="Business name"
-        value={businessName}
-        onChange={(e) => setBusinessName(e.target.value)}
-        style={inputStyle}
-      />
-
-      <input
-        placeholder="Industry"
-        value={industry}
-        onChange={(e) => setIndustry(e.target.value)}
-        style={inputStyle}
-      />
-
-      <input
-        placeholder="Style"
-        value={style}
-        onChange={(e) => setStyle(e.target.value)}
-        style={inputStyle}
-      />
-
-      <select
-        value={plan}
-        onChange={(e) => setPlan(e.target.value)}
-        style={inputStyle}
-      >
-        <option>Starter</option>
-        <option>Professional</option>
-        <option>Enterprise</option>
-      </select>
-
-      <button
-        onClick={handleSubmit}
-        disabled={loading}
+    <main
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#f9f9f9",
+      }}
+    >
+      <form
+        onSubmit={handleSubmit}
         style={{
-          width: '100%',
-          padding: 12,
-          borderRadius: 8,
-          background: 'black',
-          color: 'white',
-          fontWeight: 700
+          width: 420,
+          background: "#fff",
+          padding: 32,
+          borderRadius: 12,
+          border: "1px solid #e5e5e5",
         }}
       >
-        {loading ? 'Submitting…' : 'Submit'}
-      </button>
-    </div>
+        <h1 style={{ fontSize: 28, marginBottom: 24 }}>
+          Admin Login
+        </h1>
+
+        <input
+          type="email"
+          placeholder="Admin email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          style={inputStyle}
+        />
+
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          style={inputStyle}
+        />
+
+        {error && (
+          <p style={{ color: "red", marginBottom: 12 }}>
+            {error}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          style={buttonStyle}
+        >
+          {loading ? "Signing in..." : "Sign in"}
+        </button>
+      </form>
+    </main>
   );
 }
 
-const inputStyle = {
-  width: '100%',
-  padding: 12,
-  marginBottom: 12,
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "12px 14px",
+  marginBottom: 16,
   borderRadius: 8,
-  border: '1px solid #ccc'
+  border: "1px solid #ccc",
+  fontSize: 14,
+};
+
+const buttonStyle: React.CSSProperties = {
+  width: "100%",
+  padding: 14,
+  background: "#111",
+  color: "#fff",
+  border: "none",
+  borderRadius: 8,
+  cursor: "pointer",
+  fontSize: 16,
+  fontWeight: 600,
 };
