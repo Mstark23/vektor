@@ -1,12 +1,35 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+let _supabase: ReturnType<typeof createClient> | null = null;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    "Supabase env vars are missing. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local"
-  );
+export function getSupabaseClient() {
+  if (_supabase) return _supabase;
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  // ❗ DO NOT throw during build
+  if (!url || !anonKey) {
+    // This allows Vercel build to pass
+    // Real usage only happens in the browser
+    console.warn("Supabase env vars missing — client not initialized yet");
+    return null as any;
+  }
+
+  _supabase = createClient(url, anonKey);
+  return _supabase;
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Backward-compatible export
+export const supabase = new Proxy(
+  {},
+  {
+    get(_, prop) {
+      const client = getSupabaseClient();
+      if (!client) {
+        throw new Error("Supabase client not initialized");
+      }
+      return (client as any)[prop];
+    },
+  }
+) as ReturnType<typeof createClient>;
