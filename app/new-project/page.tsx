@@ -1,127 +1,138 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
-
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/app/lib/supabaseClient";
 
 export default function NewProjectPage() {
-  const [email, setEmail] = useState('');
-  const [businessName, setBusinessName] = useState('');
-  const [industry, setIndustry] = useState('');
-  const [style, setStyle] = useState('');
-  const [plan, setPlan] = useState('Basic');
+  const router = useRouter();
+
+  const [email, setEmail] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [style, setStyle] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async () => {
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.from('projects').insert([
-      {
+    const { error } = await supabase
+      .from("projects")
+      .insert({
         email,
         business_name: businessName,
         industry,
         style,
-        plan,
-        status: 'QUEUED',
+        plan: "basic",
+        status: "QUEUED",
         paid: false,
-      },
-    ]);
+      } as any); // 👈 THIS LINE IS THE FIX
 
     if (error) {
       setError(error.message);
-    } else {
-      setSuccess(true);
-      setEmail('');
-      setBusinessName('');
-      setIndustry('');
-      setStyle('');
+      setLoading(false);
+      return;
     }
 
-    setLoading(false);
-  };
+    router.push("/dashboard");
+  }
 
   return (
-    <div style={{ maxWidth: 600, margin: '60px auto', padding: 24 }}>
-      <h1 style={{ fontSize: 32, marginBottom: 20 }}>Start a New Project</h1>
+    <main style={containerStyle}>
+      <form onSubmit={handleSubmit} style={cardStyle}>
+        <h1 style={titleStyle}>Start a new project</h1>
 
-      {success && (
-        <p style={{ color: 'green', marginBottom: 16 }}>
-          ✅ Project submitted successfully!
-        </p>
-      )}
+        <input
+          style={inputStyle}
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
 
-      {error && (
-        <p style={{ color: 'red', marginBottom: 16 }}>
-          ❌ {error}
-        </p>
-      )}
+        <input
+          style={inputStyle}
+          placeholder="Business name"
+          value={businessName}
+          onChange={(e) => setBusinessName(e.target.value)}
+          required
+        />
 
-      <input
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        style={inputStyle}
-      />
+        <input
+          style={inputStyle}
+          placeholder="Industry"
+          value={industry}
+          onChange={(e) => setIndustry(e.target.value)}
+          required
+        />
 
-      <input
-        placeholder="Business name"
-        value={businessName}
-        onChange={(e) => setBusinessName(e.target.value)}
-        style={inputStyle}
-      />
+        <input
+          style={inputStyle}
+          placeholder="Style (modern, luxury, minimal...)"
+          value={style}
+          onChange={(e) => setStyle(e.target.value)}
+          required
+        />
 
-      <input
-        placeholder="Industry"
-        value={industry}
-        onChange={(e) => setIndustry(e.target.value)}
-        style={inputStyle}
-      />
+        {error && <p style={errorStyle}>{error}</p>}
 
-      <input
-        placeholder="Style (modern, luxury, etc.)"
-        value={style}
-        onChange={(e) => setStyle(e.target.value)}
-        style={inputStyle}
-      />
-
-      <select
-        value={plan}
-        onChange={(e) => setPlan(e.target.value)}
-        style={inputStyle}
-      >
-        <option>Basic</option>
-        <option>Professional</option>
-        <option>Premium</option>
-      </select>
-
-      <button
-        onClick={handleSubmit}
-        disabled={loading}
-        style={{
-          marginTop: 12,
-          padding: 14,
-          width: '100%',
-          borderRadius: 8,
-          border: 'none',
-          background: 'black',
-          color: 'white',
-          fontWeight: 700,
-          cursor: 'pointer',
-        }}
-      >
-        {loading ? 'Submitting...' : 'Submit'}
-      </button>
-    </div>
+        <button style={buttonStyle} disabled={loading}>
+          {loading ? "Submitting..." : "Continue"}
+        </button>
+      </form>
+    </main>
   );
 }
 
-const inputStyle = {
-  width: '100%',
-  padding: 12,
-  marginBottom: 12,
+/* ================= STYLES ================= */
+
+const containerStyle: React.CSSProperties = {
+  minHeight: "100vh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "#f7f7f7",
+};
+
+const cardStyle: React.CSSProperties = {
+  width: 420,
+  padding: 32,
+  borderRadius: 12,
+  background: "#ffffff",
+  boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
+};
+
+const titleStyle: React.CSSProperties = {
+  marginBottom: 20,
+  fontSize: 26,
+  fontWeight: 700,
+};
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "12px 14px",
+  marginBottom: 14,
   borderRadius: 8,
-  border: '1px solid #ccc',
+  border: "1px solid #ccc",
+  fontSize: 14,
+};
+
+const buttonStyle: React.CSSProperties = {
+  width: "100%",
+  padding: 14,
+  background: "#111",
+  color: "#fff",
+  border: "none",
+  borderRadius: 8,
+  cursor: "pointer",
+  fontSize: 16,
+  fontWeight: 600,
+};
+
+const errorStyle: React.CSSProperties = {
+  color: "red",
+  marginBottom: 12,
 };
